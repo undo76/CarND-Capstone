@@ -40,7 +40,7 @@ class WaypointUpdater(object):
         self.pose = None
         self.waypoints = None
         self.waypoints_2d = None
-
+        
         self.loop()
 
     def loop(self):
