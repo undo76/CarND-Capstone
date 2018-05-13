@@ -23,11 +23,12 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 50 # Number of waypoints we will publish. You can change this number
 
 
 class WaypointUpdater(object):
     def __init__(self):
+        print("Start")
         rospy.init_node('waypoint_updater')
 
         rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
@@ -38,15 +39,16 @@ class WaypointUpdater(object):
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
         self.pose = None
-        self.waypoints = None
+        self.base_waypoints = None
         self.waypoints_2d = None
+        self.waypoint_tree = None
         
         self.loop()
 
     def loop(self):
         rate = rospy.Rate(50) # Hz
         while not rospy.is_shutdown():
-            if self.pose and self.waypoints: # Wait till have data
+            if self.pose and self.base_waypoints: # Wait till have data
                 lane = self.get_lane()
                 self.final_waypoints_pub.publish(lane)
             rate.sleep()
@@ -55,7 +57,7 @@ class WaypointUpdater(object):
         self.pose = pose
 
     def waypoints_cb(self, waypoints):
-        self.waypoints = waypoints
+        self.base_waypoints = waypoints
         self.waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
         self.waypoint_tree = KDTree(self.waypoints_2d)
 
@@ -102,8 +104,8 @@ class WaypointUpdater(object):
     def get_lane(self):
         lane = Lane()
         idx = self.find_closest_waypoint_idx()
-        lane.header = self.waypoints.header
-        lane.waypoints = self.waypoints.waypoints[idx:idx + LOOKAHEAD_WPS] # TODO: Wrap at the end
+        lane.header = self.base_waypoints.header
+        lane.waypoints = self.base_waypoints.waypoints[idx:idx + LOOKAHEAD_WPS] # TODO: Wrap at the end
         return lane
 
 if __name__ == '__main__':
