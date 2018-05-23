@@ -6,3 +6,4 @@ devel
 profile.tmp
 data/*.bag
 data/traffic_light_bag_files.zip
+bags/
