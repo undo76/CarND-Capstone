@@ -24,20 +24,6 @@ class TLDetector(object):
         self.camera_image = None
         self.lights = []
 
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
-
-        '''
-        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
-        helps you acquire an accurate ground truth data source for the traffic light
-        classifier by sending the current color state of all traffic lights in the
-        simulator. When testing on the vehicle, the color state will not be available. You'll need to
-        rely on the position of the light and the camera image to predict it.
-        '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights',
-                                TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
-
         config_string = rospy.get_param("/traffic_light_config")
         self.config = yaml.load(config_string)
 
@@ -55,6 +41,20 @@ class TLDetector(object):
 
         self.waypoint_tree = None
 
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+
+        '''
+        /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
+        helps you acquire an accurate ground truth data source for the traffic light
+        classifier by sending the current color state of all traffic lights in the
+        simulator. When testing on the vehicle, the color state will not be available. You'll need to
+        rely on the position of the light and the camera image to predict it.
+        '''
+        sub3 = rospy.Subscriber('/vehicle/traffic_lights',
+                                TrafficLightArray, self.traffic_cb)
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
+
 
         rospy.spin()
 
@@ -62,9 +62,10 @@ class TLDetector(object):
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        self.waypoints = waypoints
-        waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
-        self.waypoint_tree = KDTree(waypoints_2d)
+        if not self.waypoints:
+            self.waypoints = waypoints
+            waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
+            self.waypoint_tree = KDTree(waypoints_2d)
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -122,16 +123,16 @@ class TLDetector(object):
 
         """
         # FIXME: Detect light
-        return light.state
+        # return light.state
 
-        # if(not self.has_image):
-        #     self.prev_light_loc = None
-        #     return False
+        if(not self.has_image):
+            self.prev_light_loc = None
+            return False
 
-        # cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
+        cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
 
-        # # Get classification
-        # return self.light_classifier.get_classification(cv_image)
+        # Get classification
+        return self.light_classifier.get_classification(cv_image)
 
     def process_traffic_lights(self):
         """Finds closest visible traffic light, if one exists, and determines its
@@ -142,13 +143,14 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-        next_light = None
-        light_wp_idx = -1
         
+        next_light = None
+        light_wp_idx = -1                
 
         # List of positions that correspond to the line to stop in front of for a given intersection
-        stop_line_positions = self.config['stop_line_positions']
+        stop_line_positions = self.config['stop_line_positions']        
         if(self.pose and self.waypoint_tree):
+            
             prev_distance = len(self.waypoints.waypoints) # max value
             car_position = self.pose.pose.position
             car_wp_idx = self.get_closest_waypoint(car_position.x, car_position.y)

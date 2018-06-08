@@ -51,7 +51,7 @@ class WaypointUpdater(object):
     def loop(self):
         rate = rospy.Rate(50) # Hz
         while not rospy.is_shutdown():
-            if self.pose and self.base_waypoints: # Wait till have data
+            if self.pose and self.base_waypoints and self.waypoint_tree: # Wait till have data
                 lane = self.get_lane()
                 self.final_waypoints_pub.publish(lane)
             rate.sleep()
@@ -87,7 +87,7 @@ class WaypointUpdater(object):
             wp1 = i
         return dist
     
-    def find_closest_waypoint_idx(self):
+    def find_closest_waypoint_idx(self):        
         pos = self.pose.pose.position
         x, y = pos.x, pos.y
         nearest_wp_idx = self.waypoint_tree.query([x, y], 1)[1] # Returns the index of the nearest WP
@@ -108,10 +108,15 @@ class WaypointUpdater(object):
     def get_lane(self):
         lane = Lane()
         idx = self.find_closest_waypoint_idx()
-        base_waypoints = self.base_waypoints.waypoints[idx:idx + LOOKAHEAD_WPS] # TODO: Wrap at the end
-        # lane.header = self.base_waypoints.header
 
-        if self.light_wp_idx == -1 or (self.light_wp_idx >= idx + LOOKAHEAD_WPS):
+        base_waypoints = self.base_waypoints.waypoints[idx:idx + LOOKAHEAD_WPS] 
+
+        # Wrap around. Not really necessary as the car stops at the last point.
+        if len(base_waypoints) < LOOKAHEAD_WPS:            
+            base_waypoints.extend(self.base_waypoints.waypoints[:LOOKAHEAD_WPS - len(base_waypoints)])
+            
+
+        if self.light_wp_idx == -1 or (self.light_wp_idx >= ((idx + LOOKAHEAD_WPS) % len(self.waypoints_2d))):
             lane.waypoints = base_waypoints
         else:
             lane.waypoints = self.decelerate(base_waypoints, idx)            

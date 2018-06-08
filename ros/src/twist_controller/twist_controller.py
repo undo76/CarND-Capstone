@@ -66,7 +66,7 @@ class Controller(object):
             throttle = .0
             brake = 400 # N*m
         # Or if we want to go slower and we can't lower the throttle anymore.
-        elif throttle < .01 and vel_error < .0:
+        elif throttle < .1 and vel_error < .0:
             throttle = .0
             decel = max(vel_error, self.decel_limit)
             brake = abs(decel) * self.vehicle_mass * self.wheel_radius
