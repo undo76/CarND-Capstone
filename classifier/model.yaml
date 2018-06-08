@@ -492,45 +492,13 @@ config:
         - {}
     name: dense_1
   - class_name: Dropout
-    config: {name: dropout_1, noise_shape: null, rate: 0.5, seed: null, trainable: true}
+    config: {name: dropout_1, rate: 0.5, trainable: true}
     inbound_nodes:
     - - - dense_1
         - 0
         - 0
         - {}
     name: dropout_1
-  - class_name: Dense
-    config:
-      activation: relu
-      activity_regularizer: null
-      bias_constraint: null
-      bias_initializer:
-        class_name: Zeros
-        config: {}
-      bias_regularizer: null
-      kernel_constraint: null
-      kernel_initializer:
-        class_name: VarianceScaling
-        config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
-      kernel_regularizer: null
-      name: dense_2
-      trainable: true
-      units: 128
-      use_bias: true
-    inbound_nodes:
-    - - - dropout_1
-        - 0
-        - 0
-        - {}
-    name: dense_2
-  - class_name: Dropout
-    config: {name: dropout_2, noise_shape: null, rate: 0.5, seed: null, trainable: true}
-    inbound_nodes:
-    - - - dense_2
-        - 0
-        - 0
-        - {}
-    name: dropout_2
   - class_name: Dense
     config:
       activation: softmax
@@ -545,17 +513,17 @@ config:
         class_name: VarianceScaling
         config: {distribution: uniform, mode: fan_avg, scale: 1.0, seed: null}
       kernel_regularizer: null
-      name: dense_3
+      name: dense_2
       trainable: true
       units: 4
       use_bias: true
     inbound_nodes:
-    - - - dropout_2
+    - - - dropout_1
         - 0
         - 0
         - {}
-    name: dense_3
+    name: dense_2
   name: model_1
   output_layers:
-  - [dense_3, 0, 0]
-keras_version: 2.0.9
+  - [dense_2, 0, 0]
+keras_version: 2.0.8
